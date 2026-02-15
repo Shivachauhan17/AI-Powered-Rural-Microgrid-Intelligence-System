@@ -55,32 +55,7 @@ Data Types:
 
 ### Database (PostgreSQL)
 
-Tables:
 
-1. households
-   - id
-   - name
-   - type (house / clinic / school)
-   - priority_level
-
-2. energy_usage
-   - household_id
-   - timestamp
-   - kwh_used
-
-3. forecasts
-   - household_id
-   - timestamp
-   - predicted_kwh
-   - lower_bound
-   - upper_bound
-
-4. allocation_schedule
-   - household_id
-   - timestamp
-   - allocated_kwh
-
----
 
 ## 4. AI Layer Design
 
