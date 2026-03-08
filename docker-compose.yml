@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      target: production
+    container_name: microgrid-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - model-data:/app/app/models/saved_models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    networks:
+      - microgrid-net
+
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    container_name: microgrid-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - microgrid-net
+
+networks:
+  microgrid-net:
+    driver: bridge
+
+volumes:
+  model-data:

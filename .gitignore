@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.pkl
+*.joblib
+*.db
+.env
+.venv/
+venv/
+node_modules/
+dist/
+build/
+*.egg-info/
+backend/app/models/saved_models/*.pkl
+backend/app/models/saved_models/*.json
+sagemaker/last_training_job.json
+.DS_Store
