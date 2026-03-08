@@ -1,0 +1,62 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      target: production
+    container_name: microgrid-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=true
+      - BACKEND_CORS_ORIGINS=["http://localhost:5173","http://localhost:3000","http://localhost:80"]
+      - SOLAR_CAPACITY_KW=30.0
+      - BATTERY_CAPACITY_KWH=50.0
+      - TOTAL_HOUSES=10
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - microgrid-net
+
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    container_name: microgrid-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - microgrid-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: microgrid-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - microgrid-net
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+
+networks:
+  microgrid-net:
+    driver: bridge
+
+volumes:
+  redis-data:

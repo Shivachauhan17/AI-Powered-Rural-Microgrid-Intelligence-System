@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>AWS Architecture – AI Rural Microgrid System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --border: #1f2937;
+    --text: #f1f5f9;
+    --muted: #64748b;
+    --accent: #f59e0b;
+    --green: #10b981;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --red: #ef4444;
+    --cyan: #06b6d4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; padding: 40px; }
+
+  h1 { font-size: 28px; font-weight: 800; color: var(--accent); margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 40px; font-family: 'IBM Plex Mono', monospace; }
+
+  .diagram { display: flex; flex-direction: column; gap: 20px; max-width: 1300px; margin: 0 auto; }
+
+  /* Layer */
+  .layer { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px 28px; position: relative; }
+  .layer-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .layer-title::before { content: ''; width: 24px; height: 2px; }
+
+  .layer.iot .layer-title::before { background: var(--green); }
+  .layer.cloud .layer-title::before { background: var(--blue); }
+  .layer.compute .layer-title::before { background: var(--purple); }
+  .layer.data .layer-title::before { background: var(--cyan); }
+  .layer.monitoring .layer-title::before { background: var(--accent); }
+
+  .layer.iot { border-color: #10b98130; }
+  .layer.cloud { border-color: #3b82f630; }
+  .layer.compute { border-color: #8b5cf630; }
+  .layer.data { border-color: #06b6d430; }
+  .layer.monitoring { border-color: #f59e0b30; }
+
+  /* Row */
+  .row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+
+  /* Service Box */
+  .svc { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 120px; cursor: default; transition: transform 0.15s, box-shadow 0.15s; position: relative; }
+  .svc:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .svc-icon { font-size: 28px; }
+  .svc-name { font-size: 11px; font-weight: 700; text-align: center; line-height: 1.3; }
+  .svc-sub { font-size: 10px; color: var(--muted); text-align: center; font-family: 'IBM Plex Mono', monospace; }
+
+  /* Service badge on hover */
+  .svc-badge { position: absolute; top: -8px; right: -8px; background: var(--accent); color: #000; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; display: none; text-transform: uppercase; }
+  .svc:hover .svc-badge { display: block; }
+
+  /* Arrow */
+  .arrow { color: var(--muted); font-size: 20px; flex-shrink: 0; }
+  .arrow.down { transform: rotate(90deg); }
+  .arrow.label { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .arrow-text { font-size: 9px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
+
+  /* Colors */
+  .green { color: var(--green); border-color: #10b98140 !important; }
+  .blue { color: var(--blue); border-color: #3b82f640 !important; }
+  .purple { color: var(--purple); border-color: #8b5cf640 !important; }
+  .cyan { color: var(--cyan); border-color: #06b6d440 !important; }
+  .orange { color: var(--accent); border-color: #f59e0b40 !important; }
+  .red { color: var(--red); border-color: #ef444440 !important; }
+
+  /* Divider */
+  .pipe { font-size: 24px; color: var(--border); }
+
+  /* Priority legend */
+  .legend { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Tag */
+  .tag { font-size: 9px; padding: 2px 8px; border-radius: 999px; font-weight: 700; text-transform: uppercase; white-space: nowrap; margin-top: 2px; }
+  .tag.managed { background: #3b82f620; color: #3b82f6; }
+  .tag.serverless { background: #8b5cf620; color: #8b5cf6; }
+  .tag.storage { background: #06b6d420; color: #06b6d4; }
+  .tag.free { background: #10b98120; color: #10b981; }
+
+  /* Flow boxes */
+  .flow { display: flex; align-items: center; gap: 8px; }
+  .flow-label { font-size: 10px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+
+  /* Title section */
+  .header { text-align: center; margin-bottom: 40px; }
+  .logo { font-size: 40px; margin-bottom: 12px; }
+
+  /* Footer */
+  footer { text-align: center; margin-top: 40px; font-size: 12px; color: var(--muted); }
+  footer strong { color: var(--accent); }
+
+  /* Cost estimate box */
+  .cost-box { background: var(--surface); border: 1px solid #f59e0b30; border-radius: 12px; padding: 20px 24px; margin-top: 20px; }
+  .cost-box h3 { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 12px; }
+  .cost-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .cost-item { display: flex; justify-content: space-between; font-size: 12px; padding: 8px 12px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); }
+  .cost-item span:first-child { color: var(--muted); }
+  .cost-item strong { color: var(--green); font-family: 'IBM Plex Mono', monospace; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">⚡</div>
+  <h1>AWS Architecture – AI Rural Microgrid Intelligence System</h1>
+  <p class="subtitle">Team Data Mavericks · Shiva Chauhan · Production Deployment · ap-south-1 (Mumbai)</p>
+</div>
+
+<div class="diagram">
+
+  <!-- Layer 1: IoT Edge -->
+  <div class="layer iot">
+    <div class="layer-title">🌐 IoT Edge Layer — Field Devices (Village)</div>
+    <div class="row">
+      <div class="svc green">
+        <div class="svc-icon">📟</div>
+        <div class="svc-name">ESP32<br>Smart Meters</div>
+        <div class="svc-sub">10 households</div>
+        <div class="svc-badge">Hardware</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="svc green">
+        <div class="svc-icon">🌤️</div>
+        <div class="svc-name">Weather<br>Sensors</div>
+        <div class="svc-sub">Temp / Solar irr.</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="svc green">
+        <div class="svc-icon">🔌</div>
+        <div class="svc-name">Smart<br>Relays</div>
+        <div class="svc-sub">Load switching</div>
+      </div>
+      <div class="pipe">|</div>
+      <div class="svc orange">
+        <div class="svc-icon">📡</div>
+        <div class="svc-name">AWS IoT<br>Core</div>
+        <div class="svc-sub">MQTT broker</div>
+        <div class="tag managed">Managed</div>
+        <div class="svc-badge">Ingestion</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="svc orange">
+        <div class="svc-icon">🔄</div>
+        <div class="svc-name">IoT Rules<br>Engine</div>
+        <div class="svc-sub">Route to services</div>
+        <div class="tag managed">Managed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer 2: Network & CDN -->
+  <div class="layer cloud">
+    <div class="layer-title">🌐 Network Layer — Traffic Ingress</div>
+    <div class="row">
+      <div class="svc blue">
+        <div class="svc-icon">🌍</div>
+        <div class="svc-name">Route 53</div>
+        <div class="svc-sub">DNS routing</div>
+        <div class="tag managed">DNS</div>
+        <div class="svc-badge">DNS</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="svc blue">
+        <div class="svc-icon">🛡️</div>
+        <div class="svc-name">AWS WAF +<br>Shield</div>
+        <div class="svc-sub">DDoS protection</div>
+        <div class="tag managed">Security</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="svc blue">
+        <div class="svc-icon">⚖️</div>
+        <div class="svc-name">Application<br>Load Balancer</div>
+        <div class="svc-sub">HTTP/HTTPS :80/:443</div>
+        <div class="tag managed">ALB</div>
+        <div class="svc-badge">Entry</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="svc blue">
+        <div class="svc-icon">🔒</div>
+        <div class="svc-name">ACM<br>Certificate</div>
+        <div class="svc-sub">SSL/TLS termination</div>
+        <div class="tag free">Free</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer 3: Compute -->
+  <div class="layer compute">
+    <div class="layer-title">💻 Compute Layer — ECS Fargate (Serverless Containers)</div>
+    <div class="row">
+      <div class="svc purple">
+        <div class="svc-icon">🏗️</div>
+        <div class="svc-name">ECS Cluster</div>
+        <div class="svc-sub">microgrid-cluster</div>
+        <div class="tag managed">Fargate</div>
+        <div class="svc-badge">Compute</div>
+      </div>
+      <div class="arrow">→</div>
+
+      <!-- Frontend container -->
+      <div class="svc purple">
+        <div class="svc-icon">⚛️</div>
+        <div class="svc-name">React Frontend<br>Container</div>
+        <div class="svc-sub">Nginx :80 | 512MB</div>
+        <div class="tag serverless">Container</div>
+      </div>
+
+      <div class="arrow" style="font-size:14px;color:#8b5cf6;">⟷</div>
+
+      <!-- Backend container -->
+      <div class="svc purple" style="border-width:2px;">
+        <div class="svc-icon">🐍</div>
+        <div class="svc-name">FastAPI Backend<br>Container</div>
+        <div class="svc-sub">Uvicorn :8000 | 1.5GB</div>
+        <div class="tag serverless">Container</div>
+        <div class="svc-badge">Core AI</div>
+      </div>
+
+      <div class="arrow">→</div>
+
+      <div class="svc purple">
+        <div class="svc-icon">🧠</div>
+        <div class="svc-name">ML Model<br>Workers</div>
+        <div class="svc-sub">XGBoost + PuLP</div>
+        <div class="tag serverless">AI</div>
+      </div>
+
+      <div class="pipe">|</div>
+
+      <!-- Auto Scaling -->
+      <div class="svc purple">
+        <div class="svc-icon">📈</div>
+        <div class="svc-name">Auto Scaling</div>
+        <div class="svc-sub">1–5 tasks · CPU 70%</div>
+        <div class="tag managed">Scaling</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer 4: Data -->
+  <div class="layer data">
+    <div class="layer-title">💾 Data Layer — Storage & Messaging</div>
+    <div class="row">
+      <div class="svc cyan">
+        <div class="svc-icon">🪣</div>
+        <div class="svc-name">S3 Bucket</div>
+        <div class="svc-sub">Models / meter data</div>
+        <div class="tag storage">Storage</div>
+        <div class="svc-badge">Data</div>
+      </div>
+
+      <div class="arrow">→</div>
+
+      <div class="svc cyan">
+        <div class="svc-icon">🔥</div>
+        <div class="svc-name">AWS Glue</div>
+        <div class="svc-sub">ETL pipeline</div>
+        <div class="tag managed">ETL</div>
+      </div>
+
+      <div class="arrow">→</div>
+
+      <div class="svc cyan">
+        <div class="svc-icon">📊</div>
+        <div class="svc-name">Athena</div>
+        <div class="svc-sub">SQL on S3 data</div>
+        <div class="tag serverless">Query</div>
+      </div>
+
+      <div class="pipe">|</div>
+
+      <div class="svc cyan">
+        <div class="svc-icon">⚡</div>
+        <div class="svc-name">ElastiCache<br>Redis</div>
+        <div class="svc-sub">Session / cache</div>
+        <div class="tag managed">Cache</div>
+      </div>
+
+      <div class="pipe">|</div>
+
+      <div class="svc cyan">
+        <div class="svc-icon">🔐</div>
+        <div class="svc-name">Secrets<br>Manager</div>
+        <div class="svc-sub">API keys / tokens</div>
+        <div class="tag managed">Security</div>
+      </div>
+
+      <div class="pipe">|</div>
+
+      <div class="svc cyan">
+        <div class="svc-icon">🐳</div>
+        <div class="svc-name">ECR</div>
+        <div class="svc-sub">Docker registry</div>
+        <div class="tag managed">Registry</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer 5: Monitoring & Notifications -->
+  <div class="layer monitoring">
+    <div class="layer-title">📊 Observability & Notifications</div>
+    <div class="row">
+      <div class="svc orange">
+        <div class="svc-icon">📉</div>
+        <div class="svc-name">CloudWatch<br>Logs & Metrics</div>
+        <div class="svc-sub">ECS + API logs</div>
+        <div class="tag managed">Monitoring</div>
+        <div class="svc-badge">Ops</div>
+      </div>
+
+      <div class="arrow">→</div>
+
+      <div class="svc orange">
+        <div class="svc-icon">🔔</div>
+        <div class="svc-name">CloudWatch<br>Alarms</div>
+        <div class="svc-sub">CPU, error rate</div>
+        <div class="tag managed">Alerts</div>
+      </div>
+
+      <div class="arrow">→</div>
+
+      <div class="svc orange">
+        <div class="svc-icon">📬</div>
+        <div class="svc-name">SNS Topics</div>
+        <div class="svc-sub">Email alerts</div>
+        <div class="tag managed">Notify</div>
+      </div>
+
+      <div class="pipe">|</div>
+
+      <div class="svc orange">
+        <div class="svc-icon">📱</div>
+        <div class="svc-name">Twilio SMS</div>
+        <div class="svc-sub">Hindi alerts to op</div>
+        <div class="tag managed">SMS</div>
+      </div>
+
+      <div class="pipe">|</div>
+
+      <div class="svc orange">
+        <div class="svc-icon">🚀</div>
+        <div class="svc-name">CodePipeline<br>CI/CD</div>
+        <div class="svc-sub">Auto-deploy on push</div>
+        <div class="tag managed">CI/CD</div>
+      </div>
+
+      <div class="arrow">→</div>
+
+      <div class="svc orange">
+        <div class="svc-icon">⚙️</div>
+        <div class="svc-name">CodeBuild</div>
+        <div class="svc-sub">Docker build + test</div>
+        <div class="tag managed">Build</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Flow Legend -->
+  <div class="cost-box">
+    <h3>📊 Estimated Monthly AWS Cost (10-house pilot)</h3>
+    <div class="cost-grid">
+      <div class="cost-item"><span>ECS Fargate (2 tasks)</span><strong>~$45/mo</strong></div>
+      <div class="cost-item"><span>ALB</span><strong>~$18/mo</strong></div>
+      <div class="cost-item"><span>ElastiCache (t3.micro)</span><strong>~$13/mo</strong></div>
+      <div class="cost-item"><span>S3 + Data Transfer</span><strong>~$5/mo</strong></div>
+      <div class="cost-item"><span>IoT Core (MQTT)</span><strong>~$2/mo</strong></div>
+      <div class="cost-item"><span>CloudWatch Logs</span><strong>~$3/mo</strong></div>
+      <div class="cost-item"><span>Secrets Manager</span><strong>~$1/mo</strong></div>
+      <div class="cost-item"><span>Route53</span><strong>~$0.50/mo</strong></div>
+      <div class="cost-item" style="border-color:#f59e0b40;"><span style="color:var(--accent);font-weight:700;">TOTAL ESTIMATE</span><strong style="color:var(--accent);">~₹7,300/mo</strong></div>
+    </div>
+  </div>
+
+  <!-- Priority Legend -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;">
+    <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text);">⚡ Energy Priority System</h3>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>🏥 Clinic (Critical) — Always 95%+ supply</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>🏫 School (High) — 80%+ guarantee</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#eab308"></div>💧 Water Pump (High) — 80%+ guarantee</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>🏠 Households (Normal) — Fair LP allocation</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div>🤖 Jain's Fairness Index — Target: >0.88</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p><strong>AI-Powered Rural Microgrid Intelligence System</strong> · Team Data Mavericks · Shiva Chauhan</p>
+  <p style="margin-top:6px;">Designed for Hackathon Demo &amp; Production Deployment · AWS Region: ap-south-1 (Mumbai)</p>
+</footer>
+
+</body>
+</html>

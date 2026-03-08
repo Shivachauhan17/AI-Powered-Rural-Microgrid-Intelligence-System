@@ -1,0 +1,4 @@
+# Trained model files (.joblib) are saved here.
+# Run: python scripts/train_models.py to populate this directory.
+# .joblib files are gitignored (too large for git).
+# In production: use AWS S3 to store and load model artifacts.

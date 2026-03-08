@@ -1,0 +1,21 @@
+{
+  "trained_at": "2026-03-08T13:52:32.003647",
+  "n_train_days": 120,
+  "capacity_kw": 30.0,
+  "n_features": 10,
+  "feature_names": [
+    "hour",
+    "hour_sin",
+    "hour_cos",
+    "month_sin",
+    "month_cos",
+    "cloud_cover",
+    "is_peak_solar",
+    "lag_1h",
+    "lag_24h",
+    "rolling_mean_3h"
+  ],
+  "val_mae_kw": 0.0499,
+  "val_rmse_kw": 0.0904,
+  "train_time_s": 0.31
+}
